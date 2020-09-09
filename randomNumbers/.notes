@@ -1,0 +1,7 @@
+# Initialise Project 
+expo init projectName
+
+# Start servers
+cd projectName
+expo start
+*scan QR code
