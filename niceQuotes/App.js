@@ -59,6 +59,13 @@ export default class App extends React.Component {
     this.setState({index: oldIndex});
   }
   
+
+  _randomQuote = () => {
+    let {index, quotes} = this.state;
+    let randomIndex = Math.floor(Math.random() * quotes.length);
+    this.setState({index: randomIndex});
+  }
+
   componentDidMount() {
    this._retrieveData()
   }
@@ -68,23 +75,23 @@ export default class App extends React.Component {
   { 
     //this._retrieveData()
     let {index, quotes} = this.state;
-    let setVisible = false;
     const quote = quotes[index];
     let content = <Text>Bisher keine Zitate</Text>
-    if (quote) {
-      content = <Quote text={quote.text} author={quote.author}></Quote>
-      setVisible = true;
-    }
+    if (quote) content = <Quote text={quote.text} author={quote.author}></Quote>
+
+    let showNaviButton = false
+    if (quotes.length >= 2) showNaviButton = true
     console.log(`render ${index}`);
     return (
     <SafeAreaView style={styles.container}>
     <MyButton visible={true} style={styles.createButton} title='Create' onPress={() =>this.setState({showNewQuoteScreen: true})}/>
-    <MyButton visible={setVisible} style={styles.deleteButton} title='Delete' onPress={this._deleteQuote}/>
+    <MyButton visible={quotes.length >= 1} style={styles.deleteButton} title='Delete' onPress={this._deleteQuote}/>
     <NewQuote isVisible={this.state.showNewQuoteScreen} onSaveFct={this._addQuote} backButton={this._silentlyBack}></NewQuote>
     {//quote === undefined ? (<Text>Bisher keine Zitate</Text>) : (<Quote text={quote.text} author={quote.author}></Quote>)
     content}  
-    <MyButton visible={setVisible} style={styles.nextButton} title='Next' onPress={this._nextQuote}/>
-    <MyButton visible={setVisible} style={styles.backButton} title='Back' onPress={this._lastQuote}/>
+    <MyButton visible={showNaviButton} style={styles.nextButton} title='Next' onPress={this._nextQuote}/>
+    <MyButton visible={showNaviButton} style={styles.randomButton} title='Random' onPress={this._randomQuote}/>
+    <MyButton visible={showNaviButton} style={styles.backButton} title='Back' onPress={this._lastQuote}/>
     <StatusBar style="auto" />
     </SafeAreaView>
   );
@@ -117,7 +124,12 @@ const styles = StyleSheet.create({
     position: 'absolute', 
     top: 60,
     left: 20
-    }
+    },
+    randomButton: {
+      position: 'absolute', 
+      bottom: Platform.OS === 'ios' ? 100 : 60,
+      left: '42%'
+      }
 });
 
 /*
