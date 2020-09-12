@@ -5,7 +5,7 @@ export default class NewQuote extends Component {
     state = {content:null, author:null};
 
     render() {
-        const {isVisible, onSaveFct} = this.props;  // destructuring
+        const {isVisible, onSaveFct, backButton} = this.props;  // destructuring
         const {content, author} = this.state;
 
         // aus <newQuote tag übergeben in App.js
@@ -13,12 +13,11 @@ export default class NewQuote extends Component {
             <Modal 
             visible={isVisible}
             animationType='slide'
-            onRequestClose={ () => onSaveFct(null, null) } // Abbruch beim nicht speichern und drücken des Backbuttons
+            onRequestClose={ () =>  { this.setState({ content: null, author: null });
+                                      backButton();}
+            } // Abbruch beim nicht speichern und drücken des Backbuttons
             >
             <View style={styles.container}>
-                <Text>{this.state.content // check text input, changes
-                }</Text>
-                
                     <TextInput 
                      style={[styles.input, {height:150}]} // list style properties in array  
                      placeholder='Zitat Inhalt' 

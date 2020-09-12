@@ -19,8 +19,14 @@ export default class App extends React.Component {
   _addQuote = (text, author) => {
     let { quotes } = this.state; // liste aus zitaten von state Variablen zuweisen
     if (text && author) quotes.push({ text: text, author: author }); // add zitat
+    else alert('Incomplete fields, nothing will be saved');
     this.setState({ showNewQuoteScreen: false, quotes:quotes }); // update quotes im state mit quotes
   }
+
+  _silentlyBack = () => {
+    this.setState({ showNewQuoteScreen: false }); // update quotes im state mit quotes
+  }
+
   
   render() // muss bei classen mindestens render enthalten um zu wissen wie ui aussehen soll,
   // kann initialen state definieren mit property state, so soll app aussehen beim laden
@@ -41,7 +47,7 @@ export default class App extends React.Component {
     <View style={styles.newButton}>  
         <Button title='Create'     color='darkgrey' onPress={() =>this.setState({showNewQuoteScreen: true})}> </Button> 
     </View>  
-    <NewQuote isVisible={this.state.showNewQuoteScreen} onSaveFct={this._addQuote}></NewQuote>
+    <NewQuote isVisible={this.state.showNewQuoteScreen} onSaveFct={this._addQuote} backButton={this._silentlyBack}></NewQuote>
     <Quote text={quote.text} author={quote.author}></Quote>
       <View style={styles.button}>
         <Button title='NEXT' color='darkgrey' onPress={() => this.setState({index: newIndex})}/>
