@@ -1,1 +1,11 @@
 - modal visible does not work for web, how to handle?
+
+
+processes mounting/ in UI erscheinen:
+initialise, sets state, constructor etc. (mounting) -> render -> automatically calls method componentDidMount
+update state -> render -> automatically calls method componentDidUpdate
+update props of component -> render -> automatically calls method componentDidUpdate
+automatically componentWillUnmount (aus UI verschwinden)
+
+clean cache and restart:
+expo r -c 

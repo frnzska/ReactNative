@@ -2,58 +2,90 @@ import { StatusBar } from 'expo-status-bar';
 import React from 'react';
 import { StyleSheet, View, Text,SafeAreaView, Button, Platform, ScrollView} from 'react-native';
 
+import AsyncStorage from '@react-native-community/async-storage';
 import Quote from './js/components/Quote';
 import NewQuote from './js/components/NewQuote';
-
-const data = [
-  {text: 'yo bro ahskjasf ashjkafsdk fasd kafsklj asfkj afskj adfsk jadsfkj fdsa afs afs kfask jasfk jfas fkafjöafljfasdjl afs afs lafsjkl fsd jklfas klafslk akj fsaö lfa jfsd fsakj fafsj fsakj fksalfj klsaj fksalj fkjslaj fklsaj fklsj afkj kasfj kjsa fkdsjafaslökfjöajkfd öljfas akljfaskj faksdfask dfjsa fksaffds kjfsakj akljf klsaj fksak fksjfskfjk asljdfkas fdka fj', author: 'the bro'},
-  {text: 'milkshake please', author: 'boy from the yard'},
-  {text: 'Hallo!', author: 'the lover'}
-]
+import MyButton from './js/components/MyButton';
 
 
 // mit export quasi public class damit woanders genutzt werden kann
 export default class App extends React.Component {
-  state = {index: 0, showNewQuoteScreen: false, quotes: data} // React spezifische Eigenschaft
+  state = {index: 0, showNewQuoteScreen: false, quotes:{}} // React spezifische Eigenschaft
   
+
+  _storeData(quotes) {
+    AsyncStorage.setItem('QUOTES', JSON.stringify(quotes)) // AsyncStorage ist lokaler texbasierter key-value storage
+  }
+
+  _retrieveData = async () => {
+  let val = await AsyncStorage.getItem('QUOTES');
+  if (val) {
+    result = JSON.parse(val); // returns a promise obj, so use then
+    this.setState({quotes: result});
+   }
+  }
+
   _addQuote = (text, author) => {
-    let { quotes } = this.state; // liste aus zitaten von state Variablen zuweisen
+    let { quotes, index } = this.state; // liste aus zitaten von state Variablen zuweisen
     if (text && author) quotes.push({ text: text, author: author }); // add zitat
     else alert('Incomplete fields, nothing will be saved');
-    this.setState({ showNewQuoteScreen: false, quotes:quotes }); // update quotes im state mit quotes
+    this._storeData(quotes);
+    this.setState({ showNewQuoteScreen: false, quotes: quotes, index:quotes.length - 1}); // update quotes im state mit quotes
   }
+
+  _deleteQuote = () => {
+    let {index, quotes} = this.state;
+    new_quotes = quotes.splice(index, 1)
+    console.log(`${index}`);
+    this._storeData(quotes)
+    this.setState({index: 0})
+  } 
 
   _silentlyBack = () => {
-    this.setState({ showNewQuoteScreen: false }); // update quotes im state mit quotes
+    this.setState({ showNewQuoteScreen: false }); // Backbutton wird gedrückt, Vorgang abbrechen
   }
 
+  _nextQuote = () => {
+    let {index, quotes} = this.state;
+    let newIndex = index + 1;
+    if (newIndex === quotes.length) newIndex = 0;
+    this.setState({index: newIndex});
+  }
+
+  _lastQuote = () => {
+    let {index, quotes} = this.state;
+    let oldIndex = index - 1;
+    if (oldIndex === -1) oldIndex = quotes.length - 1
+    this.setState({index: oldIndex});
+  }
   
+  componentDidMount() {
+   this._retrieveData()
+  }
+
   render() // muss bei classen mindestens render enthalten um zu wissen wie ui aussehen soll,
   // kann initialen state definieren mit property state, so soll app aussehen beim laden
   { 
-    // some state logic organising order of quotes
+    //this._retrieveData()
     let {index, quotes} = this.state;
+    let setVisible = false;
     const quote = quotes[index];
-    let newIndex = index + 1;
-    if (newIndex === quotes.length) newIndex = 0;
-    let oldIndex = index - 1;
-    if (oldIndex === -1) oldIndex = quotes.length - 1
-    
-    /*
-    Button in View
-    */
+    let content = <Text>Bisher keine Zitate</Text>
+    if (quote) {
+      content = <Quote text={quote.text} author={quote.author}></Quote>
+      setVisible = true;
+    }
+    console.log(`render ${index}`);
     return (
     <SafeAreaView style={styles.container}>
-    <View style={styles.newButton}>  
-        <Button title='Create'     color='darkgrey' onPress={() =>this.setState({showNewQuoteScreen: true})}> </Button> 
-    </View>  
+    <MyButton visible={true} style={styles.createButton} title='Create' onPress={() =>this.setState({showNewQuoteScreen: true})}/>
+    <MyButton visible={setVisible} style={styles.deleteButton} title='Delete' onPress={this._deleteQuote}/>
     <NewQuote isVisible={this.state.showNewQuoteScreen} onSaveFct={this._addQuote} backButton={this._silentlyBack}></NewQuote>
-    <Quote text={quote.text} author={quote.author}></Quote>
-      <View style={styles.button}>
-        <Button title='NEXT' color='darkgrey' onPress={() => this.setState({index: newIndex})}/>
-        <Button title='BACK' color='darkgrey'  onPress={() => this.setState({index: oldIndex})}/>
-      </View>
-      <StatusBar style="auto" />
+    {//quote === undefined ? (<Text>Bisher keine Zitate</Text>) : (<Quote text={quote.text} author={quote.author}></Quote>)
+    content}  
+    <MyButton visible={setVisible} style={styles.nextButton} title='Next' onPress={this._nextQuote}/>
+    <MyButton visible={setVisible} style={styles.backButton} title='Back' onPress={this._lastQuote}/>
+    <StatusBar style="auto" />
     </SafeAreaView>
   );
   }
@@ -64,17 +96,27 @@ const styles = StyleSheet.create({
     flex: 1,
     backgroundColor: 'lightgrey',
     alignItems: 'center',
-    justifyContent: 'center',
+    justifyContent: 'center'
   }, 
-  button: {
+  nextButton: {
     position: 'absolute', 
     bottom: Platform.OS === 'ios' ? 100 : 60,  // if plattform is ios than use 100 else 60 due to different screen format
-    flexDirection: 'row',
-    alignItems: 'center'},
-  newButton: {
+    right: 20
+    },
+  backButton: {
     position: 'absolute', 
-    top: 60
-
+    bottom: Platform.OS === 'ios' ? 100 : 60,  // if plattform is ios than use 100 else 60 due to different screen format
+    left: 20
+    },
+  createButton: {
+    position: 'absolute', 
+    top: 60,
+    right: 20
+    },
+   deleteButton: {
+    position: 'absolute', 
+    top: 60,
+    left: 20
     }
 });
 
