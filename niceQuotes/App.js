@@ -2,6 +2,7 @@ import { StatusBar } from 'expo-status-bar';
 import React from 'react';
 import { Alert, StyleSheet, Text, SafeAreaView, Platform} from 'react-native';
 import * as SQLite from 'expo-sqlite'; // file based 
+import Firebase from './js/Firebase/Firebase';
 
 //import AsyncStorage from '@react-native-community/async-storage';
 import Quote from './js/components/Quote';
@@ -13,7 +14,8 @@ const db = SQLite.openDatabase('quotes.db');
 export default class App extends React.Component {
   state = {index: 0, showNewQuoteScreen: false, quotes:[]} // React spezifische Eigenschaft
   
-/* Store with Async Storage:
+/*  ### Store with Async Storage: ###
+-------------------------------------
 
   _storeDataAsync(quotes) {
     AsyncStorage.setItem('QUOTES', JSON.stringify(quotes)) // AsyncStorage ist lokaler texbasierter key-value storage, easiest method of local saving
@@ -26,7 +28,9 @@ export default class App extends React.Component {
     this.setState({quotes: result});
    }
   }
-*/
+
+  ### Store with SQLite: ###
+-------------------------------------
 
   _saveQuoteInDb(text, author, quotes) {
     let query = `INSERT INTO quotes (text,author) VALUES (?,?)`;
@@ -53,7 +57,30 @@ export default class App extends React.Component {
     let query = 'DELETE FROM quotes WHERE id = ?';
     db.transaction( transaction => transaction.executeSql(query, [id]));
   }
+*/
 
+  _saveQuoteInDb(text, author, quotes) {
+    Firebase.db.collection('quotes').add({text, author});
+  }
+
+  _retrieveDataFromDb = async () => {
+    let quotes = [];
+    let query = await Firebase.db.collection('quotes').get();
+
+    query.forEach( row => {
+      quotes.push({
+        id: row.id,
+        text: row.data().text,
+        author: row.data().author
+      });
+    });
+    this.setState({ quotes: quotes })
+    }
+
+
+  _deleteQuoteFromDb(id) {
+    Firebase.db.collection('quotes').doc(id).delete();
+  }
 
   _addQuote = (text, author) => {
     let { quotes, index } = this.state; // liste aus zitaten von state Variablen zuweisen
@@ -107,6 +134,7 @@ export default class App extends React.Component {
   }
 
   componentDidMount() {
+    /* Mit SQLite
     let query = `CREATE TABLE IF NOT EXISTS quotes 
                  ( id INTEGER PRIMARY KEY NOT NULL,
                    text TEXT,
@@ -115,6 +143,9 @@ export default class App extends React.Component {
    db.transaction(
       transaction => transaction.executeSql(query) 
     )
+    */
+
+   Firebase.init(); // stelle Verbindung zu Firebase her
    this._retrieveDataFromDb()
   }
 
