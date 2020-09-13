@@ -13,3 +13,6 @@ expo r -c
 install sqlite (gibt Zugang zur vorhandenen sql lite db via expo api expo-sqlite):
 expo install expo-sqlite
 (dann const db = SQLite.openDatabase('quotes.db'); gibt db verbindung)
+
+
+expo install firebase
