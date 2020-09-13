@@ -1,44 +1,84 @@
 import { StatusBar } from 'expo-status-bar';
 import React from 'react';
-import { StyleSheet, View, Text,SafeAreaView, Button, Platform, ScrollView} from 'react-native';
+import { Alert, StyleSheet, Text, SafeAreaView, Platform} from 'react-native';
+import * as SQLite from 'expo-sqlite'; // file based 
 
-import AsyncStorage from '@react-native-community/async-storage';
+//import AsyncStorage from '@react-native-community/async-storage';
 import Quote from './js/components/Quote';
 import NewQuote from './js/components/NewQuote';
 import MyButton from './js/components/MyButton';
 
-
+const db = SQLite.openDatabase('quotes.db');
 // mit export quasi public class damit woanders genutzt werden kann
 export default class App extends React.Component {
-  state = {index: 0, showNewQuoteScreen: false, quotes:{}} // React spezifische Eigenschaft
+  state = {index: 0, showNewQuoteScreen: false, quotes:[]} // React spezifische Eigenschaft
   
+/* Store with Async Storage:
 
-  _storeData(quotes) {
-    AsyncStorage.setItem('QUOTES', JSON.stringify(quotes)) // AsyncStorage ist lokaler texbasierter key-value storage
+  _storeDataAsync(quotes) {
+    AsyncStorage.setItem('QUOTES', JSON.stringify(quotes)) // AsyncStorage ist lokaler texbasierter key-value storage, easiest method of local saving
   }
 
-  _retrieveData = async () => {
+  _retrieveDataFromAsyncStorage = async () => {
   let val = await AsyncStorage.getItem('QUOTES');
   if (val) {
     result = JSON.parse(val); // returns a promise obj, so use then
     this.setState({quotes: result});
    }
   }
+*/
+
+  _saveQuoteInDb(text, author, quotes) {
+    let query = `INSERT INTO quotes (text,author) VALUES (?,?)`;
+    args = [text, author]
+    db.transaction(
+      transaction => transaction.executeSql(query, args,
+        (_, result) => {quotes[quotes.length-1].id = result.insertId;
+                       this.setState({quotes:quotes}) }// add insert id to quotes
+        )
+    );
+  }
+
+  _retrieveDataFromDb (){
+    let query = 'SELECT * FROM quotes';
+    db.transaction(
+      transaction => transaction.executeSql(query, [], // leere liste da keine params
+        (_, result) => this.setState({quotes: result.rows._array})
+        )
+    );
+    }
+
+
+  _deleteQuoteFromDb(id) {
+    let query = 'DELETE FROM quotes WHERE id = ?';
+    db.transaction( transaction => transaction.executeSql(query, [id]));
+  }
+
 
   _addQuote = (text, author) => {
     let { quotes, index } = this.state; // liste aus zitaten von state Variablen zuweisen
     if (text && author) quotes.push({ text: text, author: author }); // add zitat
     else alert('Incomplete fields, nothing will be saved');
-    this._storeData(quotes);
+    //this._storeDataAsync(quotes);
+    this._saveQuoteInDb(text, author, quotes);
     this.setState({ showNewQuoteScreen: false, quotes: quotes, index:quotes.length - 1}); // update quotes im state mit quotes
   }
 
   _deleteQuote = () => {
-    let {index, quotes} = this.state;
-    new_quotes = quotes.splice(index, 1)
-    console.log(`${index}`);
-    this._storeData(quotes)
-    this.setState({index: 0})
+     _delete = () => {
+      let {index, quotes} = this.state;
+      this._deleteQuoteFromDb(id=quotes[index].id);
+      quotes.splice(index, 1)
+      //this._storeDataAsync(quotes);
+      this.setState({index: 0, quotes: quotes});
+      }
+    
+    Alert.alert('Zitat löschen?', 
+                '---',
+                [{text: 'Abbruch'},
+                 {text: 'OK', onPress: () => _delete()}]
+                );
+
   } 
 
   _silentlyBack = () => {
@@ -67,13 +107,20 @@ export default class App extends React.Component {
   }
 
   componentDidMount() {
-   this._retrieveData()
+    let query = `CREATE TABLE IF NOT EXISTS quotes 
+                 ( id INTEGER PRIMARY KEY NOT NULL,
+                   text TEXT,
+                   author TEXT )`
+
+   db.transaction(
+      transaction => transaction.executeSql(query) 
+    )
+   this._retrieveDataFromDb()
   }
 
   render() // muss bei classen mindestens render enthalten um zu wissen wie ui aussehen soll,
   // kann initialen state definieren mit property state, so soll app aussehen beim laden
   { 
-    //this._retrieveData()
     let {index, quotes} = this.state;
     const quote = quotes[index];
     let content = <Text>Bisher keine Zitate</Text>

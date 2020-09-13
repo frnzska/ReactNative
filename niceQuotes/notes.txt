@@ -7,5 +7,9 @@ update state -> render -> automatically calls method componentDidUpdate
 update props of component -> render -> automatically calls method componentDidUpdate
 automatically componentWillUnmount (aus UI verschwinden)
 
-clean cache and restart:
+clean cache :
 expo r -c 
+
+install sqlite (gibt Zugang zur vorhandenen sql lite db via expo api expo-sqlite):
+expo install expo-sqlite
+(dann const db = SQLite.openDatabase('quotes.db'); gibt db verbindung)
