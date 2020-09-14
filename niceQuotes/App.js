@@ -1,6 +1,6 @@
 import { StatusBar } from 'expo-status-bar';
 import React from 'react';
-import { Alert, StyleSheet, Text, SafeAreaView, Platform} from 'react-native';
+import { Alert, ActivityIndicator, StyleSheet, Text, SafeAreaView, Platform, View} from 'react-native';
 import * as SQLite from 'expo-sqlite'; // file based 
 import Firebase from './js/Firebase/Firebase';
 
@@ -12,7 +12,7 @@ import MyButton from './js/components/MyButton';
 const db = SQLite.openDatabase('quotes.db');
 // mit export quasi public class damit woanders genutzt werden kann
 export default class App extends React.Component {
-  state = {index: 0, showNewQuoteScreen: false, quotes:[]} // React spezifische Eigenschaft
+  state = {index: 0, showNewQuoteScreen: false, quotes:[], isLoading: true} // React spezifische Eigenschaft
   
 /*  ### Store with Async Storage: ###
 -------------------------------------
@@ -59,8 +59,11 @@ export default class App extends React.Component {
   }
 */
 
-  _saveQuoteInDb(text, author, quotes) {
-    Firebase.db.collection('quotes').add({text, author});
+  _saveQuoteInDb = async (text, author, quotes) => {
+    docRefResult = await Firebase.db.collection('quotes').add({text, author});
+    quotes[quotes.length - 1].id = docRefResult.id;
+    console.log(`${docRefResult.id}-- ${quotes[quotes.length-1].id}`);
+    this.setState({quotes:quotes});
   }
 
   _retrieveDataFromDb = async () => {
@@ -75,7 +78,8 @@ export default class App extends React.Component {
       });
     });
     this.setState({ quotes: quotes })
-    }
+    this.setState({isLoading: false});  
+  }
 
 
   _deleteQuoteFromDb(id) {
@@ -152,6 +156,15 @@ export default class App extends React.Component {
   render() // muss bei classen mindestens render enthalten um zu wissen wie ui aussehen soll,
   // kann initialen state definieren mit property state, so soll app aussehen beim laden
   { 
+    if (this.state.isLoading) {
+      return(
+      <View  style={styles.container}>
+        <ActivityIndicator size='large' color='blue'/>
+      </View>
+      ) 
+  }
+
+
     let {index, quotes} = this.state;
     const quote = quotes[index];
     let content = <Text>Bisher keine Zitate</Text>
